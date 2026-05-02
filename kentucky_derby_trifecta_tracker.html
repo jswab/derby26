@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kentucky Derby Trifecta Tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; min-height: 100vh; padding: 2rem 1rem; }
+  .app { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: #666; margin-bottom: 1.5rem; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid #ddd; margin-bottom: 1.5rem; }
+  .tab { padding: 8px 16px; font-size: 14px; background: none; border: none; border-bottom: 2px solid transparent; color: #666; cursor: pointer; margin-bottom: -1px; font-family: inherit; }
+  .tab.active { color: #1a1a1a; border-bottom-color: #C41E3A; font-weight: 500; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 12px; }
+  label { font-size: 13px; color: #666; display: block; margin-bottom: 4px; }
+  input[type=text], input[type=number] { width: 100%; margin-bottom: 12px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; background: #fff; color: #1a1a1a; }
+  input[type=text]:focus, input[type=number]:focus { outline: none; border-color: #C41E3A; }
+  .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn-primary { background: #C41E3A; color: white; border: none; border-radius: 8px; padding: 9px 20px; font-size: 14px; font-weight: 500; cursor: pointer; width: 100%; font-family: inherit; }
+  .btn-primary:hover { background: #a31830; }
+  .btn-sm { background: none; border: 1px solid #ddd; border-radius: 8px; padding: 5px 12px; font-size: 13px; cursor: pointer; color: #666; font-family: inherit; white-space: nowrap; }
+  .btn-sm:hover { background: #f5f5f3; }
+  .btn-danger { color: #E24B4A; border-color: #E24B4A; }
+  .entry-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; gap: 10px; }
+  .entry-row:last-child { border-bottom: none; }
+  .entry-name { font-size: 15px; font-weight: 500; }
+  .entry-picks { font-size: 13px; color: #666; margin-top: 4px; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 99px; margin-right: 4px; font-weight: 500; }
+  .badge-win { background: #FAC775; color: #633806; }
+  .badge-place { background: #D3D1C7; color: #444441; }
+  .badge-show { background: #C0DD97; color: #27500A; }
+  .badge-cash { background: #EAF3DE; color: #27500A; }
+  .result-card { background: #f5f5f3; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+  .result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 1rem; }
+  .result-col { text-align: center; }
+  .result-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .result-horse { font-size: 18px; font-weight: 500; }
+  .rank-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 10px; display: flex; align-items: center; gap: 1rem; }
+  .rank-num { font-size: 20px; font-weight: 500; width: 36px; text-align: center; color: #888; flex-shrink: 0; }
+  .rank-num.gold { color: #BA7517; }
+  .rank-num.silver { color: #888780; }
+  .rank-num.bronze { color: #CD7F32; }
+  .score-pill { background: #C41E3A; color: white; font-size: 13px; font-weight: 500; padding: 4px 12px; border-radius: 99px; flex-shrink: 0; }
+  .score-0 { background: #eee; color: #888; }
+  .horse-tag { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 4px; margin: 2px; }
+  .correct-exact { background: #EAF3DE; color: #27500A; }
+  .correct-pos { background: #FAC775; color: #633806; }
+  .incorrect { background: #f0f0ee; color: #888; }
+  .empty-state { text-align: center; color: #888; padding: 2rem; font-size: 14px; }
+  .warning-banner { background: #FAEEDA; border: 1px solid #FAC775; color: #633806; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 1rem; }
+  .tiebreak-label { font-size: 11px; color: #aaa; font-style: italic; margin-top: 2px; }
+  .pot-bar { background: #f5f5f3; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .pot-stat { text-align: center; }
+  .pot-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .pot-value { font-size: 22px; font-weight: 500; }
+  .winner-banner { background: #FAC775; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 12px; }
+  .winner-banner .wname { font-size: 17px; font-weight: 500; color: #412402; }
+  .winner-banner .wamt { font-size: 22px; font-weight: 500; color: #412402; margin-left: auto; }
+  .winner-banner .wlabel { font-size: 12px; color: #633806; }
+  .dollar-prefix { position: relative; }
+  .dollar-prefix input { padding-left: 22px !important; }
+  .dollar-prefix::before { content: '$'; position: absolute; left: 10px; top: 50%; transform: translateY(-70%); font-size: 14px; color: #888; pointer-events: none; z-index: 1; }
+  .info-box { font-size: 12px; color: #666; margin-bottom: 1.25rem; padding: 8px 12px; background: #f5f5f3; border-radius: 8px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+    <span style="font-size:28px;">🏇</span>
+    <h1>Kentucky Derby Trifecta Tracker</h1>
+  </div>
+  <p class="subtitle">Enter everyone's trifecta bets, then post the official results to crown the winner.</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('bets',this)">Bets</button>
+    <button class="tab" onclick="switchTab('results',this)">Official results</button>
+    <button class="tab" onclick="switchTab('leaderboard',this)">Leaderboard</button>
+  </div>
+
+  <div id="sec-bets" class="section active">
+    <div class="card">
+      <div class="row2" style="margin-bottom:0;">
+        <div>
+          <label>Guest name</label>
+          <input type="text" id="inp-name" placeholder="e.g. Sarah" />
+        </div>
+        <div>
+          <label>Bet amount (optional)</label>
+          <div class="dollar-prefix">
+            <input type="number" id="inp-amt" placeholder="0.00" min="0" step="0.01" style="margin-bottom:12px;" />
+          </div>
+        </div>
+      </div>
+      <div class="row3">
+        <div>
+          <label>Win (1st)</label>
+          <input type="text" id="inp-win" placeholder="Horse name or #" />
+        </div>
+        <div>
+          <label>Place (2nd)</label>
+          <input type="text" id="inp-place" placeholder="Horse name or #" />
+        </div>
+        <div>
+          <label>Show (3rd)</label>
+          <input type="text" id="inp-show" placeholder="Horse name or #" />
+        </div>
+      </div>
+      <button class="btn-primary" onclick="addBet()">Add bet</button>
+    </div>
+    <div id="pot-summary"></div>
+    <div id="bets-list"></div>
+  </div>
+
+  <div id="sec-results" class="section">
+    <div class="card">
+      <p style="font-size:14px;color:#666;margin-bottom:1rem;">Enter the official finishing order after the race.</p>
+      <div style="display:grid;gap:10px;">
+        <div><label>1st place (win)</label><input type="text" id="res-win" placeholder="Horse name or #" /></div>
+        <div><label>2nd place (place)</label><input type="text" id="res-place" placeholder="Horse name or #" /></div>
+        <div><label>3rd place (show)</label><input type="text" id="res-show" placeholder="Horse name or #" /></div>
+      </div>
+      <button class="btn-primary" onclick="setResults()">Post results &amp; score bets</button>
+    </div>
+    <div id="results-display"></div>
+  </div>
+
+  <div id="sec-leaderboard" class="section">
+    <div id="leaderboard-display"></div>
+  </div>
+</div>
+
+<script>
+  let bets = [];
+  let officialResults = null;
+  let entryCounter = 0;
+
+  function switchTab(tab, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('sec-' + tab).classList.add('active');
+    if (tab === 'leaderboard') renderLeaderboard();
+    if (tab === 'results') renderResultsDisplay();
+    if (tab === 'bets') renderPotSummary();
+  }
+
+  function norm(s) { return s.trim().toLowerCase(); }
+  function fmt(n) { return '$' + n.toFixed(2); }
+
+  function addBet() {
+    const name = document.getElementById('inp-name').value.trim();
+    const win = document.getElementById('inp-win').value.trim();
+    const place = document.getElementById('inp-place').value.trim();
+    const show = document.getElementById('inp-show').value.trim();
+    const amtRaw = document.getElementById('inp-amt').value.trim();
+    if (!name || !win || !place || !show) { alert('Please fill in name and all three picks.'); return; }
+    const amount = amtRaw ? Math.max(0, parseFloat(amtRaw) || 0) : 0;
+    entryCounter++;
+    bets.push({ id: Date.now(), order: entryCounter, name, win, place, show, amount });
+    ['inp-name','inp-win','inp-place','inp-show'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('inp-amt').value = '';
+    renderBets();
+    renderPotSummary();
+  }
+
+  function removeBet(id) {
+    bets = bets.filter(b => b.id !== id);
+    renderBets();
+    renderPotSummary();
+  }
+
+  function totalPot() { return bets.reduce((s, b) => s + b.amount, 0); }
+
+  function renderPotSummary() {
+    const el = document.getElementById('pot-summary');
+    if (bets.length === 0) { el.innerHTML = ''; return; }
+    const pot = totalPot();
+    const cashBets = bets.filter(b => b.amount > 0);
+    if (pot === 0) { el.innerHTML = ''; return; }
+    el.innerHTML = `
+      <div class="pot-bar">
+        <div class="pot-stat"><div class="pot-label">Total pot</div><div class="pot-value">${fmt(pot)}</div></div>
+        <div class="pot-stat"><div class="pot-label">Cash bets</div><div class="pot-value">${cashBets.length}</div></div>
+        <div class="pot-stat"><div class="pot-label">Avg bet</div><div class="pot-value">${fmt(pot / cashBets.length)}</div></div>
+      </div>`;
+  }
+
+  function renderBets() {
+    const el = document.getElementById('bets-list');
+    if (bets.length === 0) { el.innerHTML = '<p class="empty-state">No bets yet — add your first one above.</p>'; return; }
+    el.innerHTML = '<div class="card">' + bets.map(b => `
+      <div class="entry-row">
+        <div style="flex:1;min-width:0;">
+          <div class="entry-name">${esc(b.name)} <span style="font-size:11px;color:#aaa;font-weight:400;">#${b.order}</span></div>
+          <div class="entry-picks" style="margin-top:4px;">
+            <span class="badge badge-win">Win: ${esc(b.win)}</span>
+            <span class="badge badge-place">Place: ${esc(b.place)}</span>
+            <span class="badge badge-show">Show: ${esc(b.show)}</span>
+            ${b.amount > 0 ? `<span class="badge badge-cash">${fmt(b.amount)}</span>` : ''}
+          </div>
+        </div>
+        <button class="btn-sm btn-danger" onclick="removeBet(${b.id})">Remove</button>
+      </div>`).join('') + '</div>';
+  }
+
+  function setResults() {
+    const win = document.getElementById('res-win').value.trim();
+    const place = document.getElementById('res-place').value.trim();
+    const show = document.getElementById('res-show').value.trim();
+    if (!win || !place || !show) { alert('Please enter all three finishing positions.'); return; }
+    officialResults = { win, place, show };
+    renderResultsDisplay();
+    renderLeaderboard();
+  }
+
+  function renderResultsDisplay() {
+    const el = document.getElementById('results-display');
+    if (!officialResults) { el.innerHTML = ''; return; }
+    el.innerHTML = `
+      <div class="result-card">
+        <div style="font-size:13px;color:#888;margin-bottom:4px;">Official results</div>
+        <div class="result-grid">
+          <div class="result-col"><div class="result-label">1st — Win</div><div class="result-horse">${esc(officialResults.win)}</div></div>
+          <div class="result-col"><div class="result-label">2nd — Place</div><div class="result-horse">${esc(officialResults.place)}</div></div>
+          <div class="result-col"><div class="result-label">3rd — Show</div><div class="result-horse">${esc(officialResults.show)}</div></div>
+        </div>
+      </div>`;
+  }
+
+  function scoreBet(bet) {
+    if (!officialResults) return { total: 0, exactCount: 0, gotWin: false, breakdown: [] };
+    const officialArr = [norm(officialResults.win), norm(officialResults.place), norm(officialResults.show)];
+    const betArr = [norm(bet.win), norm(bet.place), norm(bet.show)];
+    const positions = ['win','place','show'];
+    const pts = [5, 3, 2];
+    let total = 0, exactCount = 0, gotWin = false;
+    const breakdown = [];
+    betArr.forEach((guessed, i) => {
+      if (guessed === officialArr[i]) {
+        total += pts[i]; exactCount++;
+        if (i === 0) gotWin = true;
+        breakdown.push({ horse: bet[positions[i]], type: 'exact', pts: pts[i] });
+      } else if (officialArr.includes(guessed)) {
+        total += 1;
+        breakdown.push({ horse: bet[positions[i]], type: 'pos', pts: 1 });
+      } else {
+        breakdown.push({ horse: bet[positions[i]], type: 'incorrect', pts: 0 });
+      }
+    });
+    return { total, exactCount, gotWin, breakdown };
+  }
+
+  function renderLeaderboard() {
+    const el = document.getElementById('leaderboard-display');
+    if (!officialResults) {
+      el.innerHTML = '<div class="warning-banner">Post the official results first to generate the leaderboard.</div>';
+      return;
+    }
+    if (bets.length === 0) {
+      el.innerHTML = '<p class="empty-state">No bets have been entered yet.</p>';
+      return;
+    }
+
+    const scored = bets.map(b => ({ ...b, score: scoreBet(b) }));
+    scored.sort((a, b) => {
+      if (b.score.total !== a.score.total) return b.score.total - a.score.total;
+      if (b.score.exactCount !== a.score.exactCount) return b.score.exactCount - a.score.exactCount;
+      if (a.score.gotWin !== b.score.gotWin) return a.score.gotWin ? -1 : 1;
+      return a.order - b.order;
+    });
+
+    const winner = scored[0];
+    const pot = totalPot();
+
+    let winnerBannerHtml = '';
+    if (pot > 0 && winner.score.total > 0) {
+      winnerBannerHtml = `
+        <div class="winner-banner">
+          <div>
+            <div class="wlabel">Winner takes the pot</div>
+            <div class="wname">${esc(winner.name)}</div>
+          </div>
+          <div class="wamt">${fmt(pot)}</div>
+        </div>`;
+    }
+
+    const medals = ['gold','silver','bronze'];
+    const rankNums = ['1st','2nd','3rd'];
+
+    function tiebreakLabel(entry, i) {
+      if (i === 0) return '';
+      const prev = scored[i - 1];
+      if (prev.score.total !== entry.score.total) return '';
+      if (prev.score.exactCount !== entry.score.exactCount) return 'tiebreak: fewest exact matches';
+      if (prev.score.gotWin !== entry.score.gotWin) return 'tiebreak: did not pick winner';
+      if (prev.order !== entry.order) return 'tiebreak: later entry';
+      return '';
+    }
+
+    const legendHtml = `
+      <div style="display:flex;gap:10px;margin-bottom:1rem;font-size:12px;color:#888;flex-wrap:wrap;">
+        <span><span class="horse-tag correct-exact">Exact spot</span> +5/+3/+2</span>
+        <span><span class="horse-tag correct-pos">Right horse, wrong spot</span> +1</span>
+        <span><span class="horse-tag incorrect">Miss</span> +0</span>
+      </div>
+      <div class="info-box">Tiebreaker: most exact matches &rarr; picked the winner &rarr; earliest entry</div>`;
+
+    const rows = scored.map((entry, i) => {
+      const s = entry.score;
+      const rankClass = i < 3 ? medals[i] : '';
+      const rankLabel = i < 3 ? rankNums[i] : (i + 1) + 'th';
+      const pillClass = s.total === 0 ? 'score-pill score-0' : 'score-pill';
+      const tags = s.breakdown.map(b => {
+        const cls = b.type === 'exact' ? 'correct-exact' : b.type === 'pos' ? 'correct-pos' : 'incorrect';
+        return `<span class="horse-tag ${cls}">${esc(b.horse)}</span>`;
+      }).join('');
+      const tbLabel = tiebreakLabel(entry, i);
+      const tbHtml = tbLabel ? `<div class="tiebreak-label">${tbLabel}</div>` : '';
+      const cashHtml = entry.amount > 0 ? `<span style="font-size:12px;color:#888;margin-left:6px;">${fmt(entry.amount)}</span>` : '';
+      return `
+        <div class="rank-card">
+          <div class="rank-num ${rankClass}">${rankLabel}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:15px;font-weight:500;">${esc(entry.name)}${cashHtml}</div>
+            <div style="margin-top:4px;">${tags}</div>
+            ${tbHtml}
+          </div>
+          <div class="${pillClass}">${s.total} pts</div>
+        </div>`;
+    }).join('');
+
+    el.innerHTML = winnerBannerHtml + legendHtml + rows;
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  renderBets();
+  renderPotSummary();
+  renderLeaderboard();
+</script>
+</body>
+</html>
